@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Increase body size limit for base64 file uploads (50MB)
+export const config = {
+    api: {
+        bodyParser: {
+            sizeLimit: "50mb",
+        },
+    },
+};
+
 interface FilePayload {
     name: string;
     size: number;

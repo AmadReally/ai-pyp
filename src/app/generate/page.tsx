@@ -116,8 +116,20 @@ export default function GeneratePage() {
             });
 
             if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || "Generation failed");
+                let errorMessage = "Generation failed";
+                try {
+                    const err = await response.json();
+                    errorMessage = err.error || errorMessage;
+                } catch {
+                    // Response might not be JSON (e.g. 413 Request Entity Too Large)
+                    const text = await response.text();
+                    if (response.status === 413) {
+                        errorMessage = "Files too large. Try uploading smaller files (under 10MB each).";
+                    } else {
+                        errorMessage = text || `Server error (${response.status})`;
+                    }
+                }
+                throw new Error(errorMessage);
             }
 
             // Simulate progress while waiting for the streamed response
