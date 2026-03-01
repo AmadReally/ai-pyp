@@ -1,0 +1,301 @@
+/* ---- Page ---- */
+.page {
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---- Floating Orbs ---- */
+.orbContainer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  animation: float 20s ease-in-out infinite;
+}
+
+.orb1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(108, 92, 231, 0.3), transparent 70%);
+  top: -100px;
+  right: -100px;
+  animation-delay: 0s;
+}
+
+.orb2 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(0, 206, 201, 0.25), transparent 70%);
+  bottom: 20%;
+  left: -80px;
+  animation-delay: -7s;
+}
+
+.orb3 {
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(162, 155, 254, 0.2), transparent 70%);
+  top: 50%;
+  right: 30%;
+  animation-delay: -14s;
+}
+
+/* ---- Navbar ---- */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: var(--space-md) 0;
+  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.navInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.logoIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-glass);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.logoText {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* ---- Hero ---- */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-top: 80px;
+}
+
+.heroBadge {
+  margin-bottom: var(--space-lg);
+  animation: fadeIn 0.6s ease 0.2s both;
+}
+
+.heroTitle {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  margin-bottom: var(--space-xl);
+  animation: fadeIn 0.6s ease 0.4s both;
+}
+
+.heroDesc {
+  max-width: 600px;
+  margin: 0 auto var(--space-2xl);
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  animation: fadeIn 0.6s ease 0.6s both;
+}
+
+.heroCta {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  justify-content: center;
+  animation: fadeIn 0.6s ease 0.8s both;
+}
+
+/* ---- Steps ---- */
+.steps {
+  padding: var(--space-4xl) 0;
+  position: relative;
+  z-index: 1;
+}
+
+.sectionTitle {
+  text-align: center;
+  margin-bottom: var(--space-md);
+}
+
+.sectionDesc {
+  text-align: center;
+  margin-bottom: var(--space-3xl);
+  font-size: 1.1rem;
+}
+
+.stepsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+}
+
+.stepCard {
+  padding: var(--space-2xl) var(--space-xl);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: fadeIn 0.6s ease both;
+}
+
+.stepNumber {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  font-size: 3rem;
+  font-weight: 900;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0.15;
+  line-height: 1;
+}
+
+.stepIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: var(--bg-glass);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-lg);
+  color: var(--accent-2);
+}
+
+.stepCard h3 {
+  margin-bottom: var(--space-sm);
+}
+
+.stepCard p {
+  font-size: 0.92rem;
+}
+
+/* ---- Features ---- */
+.features {
+  padding: var(--space-3xl) 0 var(--space-4xl);
+  position: relative;
+  z-index: 1;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+  margin-top: var(--space-3xl);
+}
+
+.featureCard {
+  padding: var(--space-xl);
+}
+
+.featureIcon {
+  font-size: 2rem;
+  margin-bottom: var(--space-md);
+}
+
+.featureCard h3 {
+  margin-bottom: var(--space-sm);
+  font-size: 1.1rem;
+}
+
+.featureCard p {
+  font-size: 0.9rem;
+}
+
+/* ---- CTA ---- */
+.cta {
+  padding: var(--space-3xl) 0;
+  position: relative;
+  z-index: 1;
+}
+
+.ctaCard {
+  text-align: center;
+  padding: var(--space-4xl) var(--space-2xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.ctaCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(108, 92, 231, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ctaCard h2 {
+  margin-bottom: var(--space-md);
+}
+
+.ctaCard p {
+  margin-bottom: var(--space-xl);
+  font-size: 1.1rem;
+}
+
+/* ---- Footer ---- */
+.footer {
+  padding: var(--space-xl) 0;
+  text-align: center;
+  border-top: 1px solid var(--border-color);
+  position: relative;
+  z-index: 1;
+}
+
+.footer p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+
+  .stepsGrid,
+  .featuresGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+
+  .stepsGrid,
+  .featuresGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroTitle {
+    font-size: 2.2rem;
+  }
+
+  .heroCta {
+    flex-direction: column;
+    align-items: center;
+  }
+}
