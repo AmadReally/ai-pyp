@@ -1,42 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Allow longer execution time on Vercel
 export const maxDuration = 60;
+
+interface FileRef {
+    uri: string;
+    mimeType: string;
+}
+
+interface GenerateBody {
+    sourceFileRefs: FileRef[];
+    pypFileRefs: FileRef[];
+    options: {
+        includeAnswerKey: boolean;
+        includeMarkingScheme: boolean;
+        difficulty: "easy" | "medium" | "hard";
+    };
+}
 
 export async function POST(request: NextRequest) {
     try {
-        // Parse FormData instead of JSON to avoid base64 bloat
-        const formData = await request.formData();
+        const body: GenerateBody = await request.json();
+        const { sourceFileRefs, pypFileRefs, options } = body;
 
-        const optionsRaw = formData.get("options") as string;
-        const options = JSON.parse(optionsRaw || "{}");
-
-        // Collect source files
-        const sourceFiles: { name: string; mimeType: string; data: string }[] = [];
-        const pypFiles: { name: string; mimeType: string; data: string }[] = [];
-
-        // Process all form entries
-        for (const [key, value] of formData.entries()) {
-            if (value instanceof File && value.size > 0) {
-                const buffer = Buffer.from(await value.arrayBuffer());
-                const base64 = buffer.toString("base64");
-                const fileObj = {
-                    name: value.name,
-                    mimeType: value.type || "application/pdf",
-                    data: base64,
-                };
-
-                if (key.startsWith("source")) {
-                    sourceFiles.push(fileObj);
-                } else if (key.startsWith("pyp")) {
-                    pypFiles.push(fileObj);
-                }
-            }
-        }
-
-        // Validate
-        if (!sourceFiles.length || !pypFiles.length) {
+        if (!sourceFileRefs.length || !pypFileRefs.length) {
             return NextResponse.json(
                 { error: "Please upload at least one source file and one past year paper." },
                 { status: 400 }
@@ -54,16 +41,16 @@ export async function POST(request: NextRequest) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
-        // ---- Stage 1: Prepare file parts for Gemini ----
-        const sourceParts = sourceFiles.map((f) => ({
-            inlineData: { mimeType: f.mimeType, data: f.data },
+        // Build file parts using Gemini file URIs (no inline data!)
+        const sourceParts = sourceFileRefs.map((f) => ({
+            fileData: { fileUri: f.uri, mimeType: f.mimeType },
         }));
 
-        const pypParts = pypFiles.map((f) => ({
-            inlineData: { mimeType: f.mimeType, data: f.data },
+        const pypParts = pypFileRefs.map((f) => ({
+            fileData: { fileUri: f.uri, mimeType: f.mimeType },
         }));
 
-        // ---- Stage 2: Analyze PYP format ----
+        // ---- Stage 1: Analyze PYP format ----
         const analyzePrompt = `You are an expert exam paper analyst. Analyze the following past year paper(s) and extract the EXACT format structure.
 
 Return a JSON object with this structure:
@@ -94,7 +81,7 @@ Be precise — capture the exact format, marks, and structure. Return ONLY valid
         ]);
         const formatJson = analyzeResult.response.text();
 
-        // ---- Stage 3: Generate the actual exam paper ----
+        // ---- Stage 2: Generate the actual exam paper ----
         const difficultyMap: Record<string, string> = {
             easy: "slightly easier than the reference paper — focus on basic recall and understanding",
             medium: "similar difficulty to the reference paper — mix of recall, understanding, and application",
@@ -160,7 +147,6 @@ Generate the complete exam paper now. Output ONLY the HTML content, no markdown 
             paper = fullOutput.substring(0, separatorIndex).trim();
             answerKey = fullOutput.substring(separatorIndex + '<hr class="answer-separator">'.length).trim();
         } else {
-            // Try alternative split
             const answerKeyMatch = fullOutput.match(/<h[12][^>]*>\s*(ANSWER\s*KEY|MARKING\s*SCHEME|MODEL\s*ANSWERS)/i);
             if (answerKeyMatch && answerKeyMatch.index) {
                 paper = fullOutput.substring(0, answerKeyMatch.index).trim();

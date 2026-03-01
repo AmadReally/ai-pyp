@@ -11,7 +11,13 @@ interface StoredFile {
     name: string;
     size: number;
     type: string;
-    file: File; // Keep the raw File object
+    file: File;
+}
+
+interface UploadedFileRef {
+    uri: string;
+    name: string;
+    mimeType: string;
 }
 
 export default function GeneratePage() {
@@ -42,7 +48,7 @@ export default function GeneratePage() {
                     name: file.name,
                     size: file.size,
                     type: file.type,
-                    file, // Store the raw file
+                    file,
                 });
             }
 
@@ -78,6 +84,35 @@ export default function GeneratePage() {
         e.stopPropagation();
     };
 
+    // ---- Upload a single file to Gemini via our API ----
+    const uploadFileToGemini = async (file: File): Promise<UploadedFileRef> => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!response.ok) {
+            let msg = "Upload failed";
+            try {
+                const err = await response.json();
+                msg = err.error || msg;
+            } catch {
+                msg = `Upload failed (${response.status})`;
+            }
+            throw new Error(`Failed to upload "${file.name}": ${msg}`);
+        }
+
+        const data = await response.json();
+        return {
+            uri: data.uri,
+            name: data.name,
+            mimeType: data.mimeType,
+        };
+    };
+
     // ---- Generate ----
     const handleGenerate = async () => {
         if (sourceFiles.length === 0 || pypFiles.length === 0) return;
@@ -86,24 +121,47 @@ export default function GeneratePage() {
         setAnswerKeyContent("");
         setShowAnswers(false);
 
-        const stages: { stage: GenerationStatus["stage"]; msg: string; progress: number }[] = [
-            { stage: "uploading", msg: "Uploading files...", progress: 10 },
-            { stage: "analyzing", msg: "Analyzing past year paper format...", progress: 30 },
-            { stage: "planning", msg: "Planning question distribution...", progress: 50 },
-            { stage: "generating", msg: "Generating exam paper with AI...", progress: 70 },
-            { stage: "formatting", msg: "Formatting final output...", progress: 90 },
-        ];
-
         try {
-            setStatus({ stage: "uploading", progress: 5, message: "Preparing files..." });
+            // Step 1: Upload files one at a time
+            const totalFiles = sourceFiles.length + pypFiles.length;
+            let uploaded = 0;
 
-            // Build FormData — sends raw binary, NOT base64 JSON
-            const formData = new FormData();
-            sourceFiles.forEach((f, i) => formData.append(`source_${i}`, f.file));
-            pypFiles.forEach((f, i) => formData.append(`pyp_${i}`, f.file));
-            formData.append("options", JSON.stringify(options));
+            setStatus({ stage: "uploading", progress: 5, message: "Uploading files to AI..." });
 
-            // Simulate progress while waiting
+            const sourceRefs: UploadedFileRef[] = [];
+            for (const f of sourceFiles) {
+                setStatus({
+                    stage: "uploading",
+                    progress: Math.round((uploaded / totalFiles) * 30) + 5,
+                    message: `Uploading ${f.name}...`,
+                });
+                const ref = await uploadFileToGemini(f.file);
+                sourceRefs.push(ref);
+                uploaded++;
+            }
+
+            const pypRefs: UploadedFileRef[] = [];
+            for (const f of pypFiles) {
+                setStatus({
+                    stage: "uploading",
+                    progress: Math.round((uploaded / totalFiles) * 30) + 5,
+                    message: `Uploading ${f.name}...`,
+                });
+                const ref = await uploadFileToGemini(f.file);
+                pypRefs.push(ref);
+                uploaded++;
+            }
+
+            // Step 2: Generate — this is a small JSON request (just URIs + options)
+            setStatus({ stage: "analyzing", progress: 35, message: "Analyzing past year paper format..." });
+
+            // Simulate progress while AI works
+            const stages: { stage: GenerationStatus["stage"]; msg: string; progress: number }[] = [
+                { stage: "planning", msg: "Planning question distribution...", progress: 50 },
+                { stage: "generating", msg: "Generating exam paper with AI...", progress: 70 },
+                { stage: "formatting", msg: "Formatting final output...", progress: 90 },
+            ];
+
             let stageIndex = 0;
             const progressInterval = setInterval(() => {
                 if (stageIndex < stages.length) {
@@ -114,11 +172,16 @@ export default function GeneratePage() {
                     });
                     stageIndex++;
                 }
-            }, 4000);
+            }, 5000);
 
             const response = await fetch("/api/generate", {
                 method: "POST",
-                body: formData, // FormData — no Content-Type header needed
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    sourceFileRefs: sourceRefs.map((r) => ({ uri: r.uri, mimeType: r.mimeType })),
+                    pypFileRefs: pypRefs.map((r) => ({ uri: r.uri, mimeType: r.mimeType })),
+                    options,
+                }),
             });
 
             clearInterval(progressInterval);
@@ -129,11 +192,7 @@ export default function GeneratePage() {
                     const err = await response.json();
                     errorMessage = err.error || errorMessage;
                 } catch {
-                    if (response.status === 413) {
-                        errorMessage = "Files too large. Try uploading smaller files (under 4MB each).";
-                    } else {
-                        errorMessage = `Server error (${response.status})`;
-                    }
+                    errorMessage = `Server error (${response.status})`;
                 }
                 throw new Error(errorMessage);
             }
@@ -183,19 +242,12 @@ export default function GeneratePage() {
           th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
           th { background: #f5f5f5; font-weight: 600; }
           .question { margin: 16px 0; }
-          .question-number { font-weight: 700; }
-          .marks { color: #666; font-size: 0.9em; }
           .option { margin: 4px 0 4px 20px; }
           .instructions { background: #f8f8f8; padding: 16px; border-radius: 8px; margin: 16px 0; }
-          .answer-key { background: #e8f5e9; padding: 16px; border-radius: 8px; margin: 16px 0; }
-          @media print {
-            body { margin: 0; }
-          }
+          @media print { body { margin: 0; } }
         </style>
       </head>
-      <body>
-        ${content}
-      </body>
+      <body>${content}</body>
       </html>
     `);
         printWindow.document.close();
@@ -213,12 +265,6 @@ export default function GeneratePage() {
 
     return (
         <div className={styles.page}>
-            {/* Floating orbs */}
-            <div className={styles.orbContainer}>
-                <div className={`${styles.orb} ${styles.orb1}`} />
-                <div className={`${styles.orb} ${styles.orb2}`} />
-            </div>
-
             {/* Navbar */}
             <nav className={styles.nav}>
                 <div className={`container ${styles.navInner}`}>
@@ -248,7 +294,6 @@ export default function GeneratePage() {
             <main className={styles.main}>
                 <div className="container">
                     {!generatedContent ? (
-                        // ---- UPLOAD & SETTINGS VIEW ----
                         <div className={styles.uploadView}>
                             <div className={styles.header}>
                                 <h1>
@@ -297,7 +342,7 @@ export default function GeneratePage() {
                                         <p className={styles.dropText}>
                                             Drag & drop or <span>browse</span>
                                         </p>
-                                        <p className={styles.dropHint}>PDF, DOCX, TXT — up to 4MB each</p>
+                                        <p className={styles.dropHint}>PDF, DOCX, TXT</p>
                                     </div>
 
                                     {sourceFiles.length > 0 && (
@@ -366,7 +411,7 @@ export default function GeneratePage() {
                                         <p className={styles.dropText}>
                                             Drag & drop or <span>browse</span>
                                         </p>
-                                        <p className={styles.dropHint}>PDF, DOCX, images — up to 4MB each</p>
+                                        <p className={styles.dropHint}>PDF, DOCX, images</p>
                                     </div>
 
                                     {pypFiles.length > 0 && (
@@ -428,8 +473,7 @@ export default function GeneratePage() {
                                             {(["easy", "medium", "hard"] as const).map((d) => (
                                                 <button
                                                     key={d}
-                                                    className={`${styles.diffBtn} ${options.difficulty === d ? styles.diffBtnActive : ""
-                                                        }`}
+                                                    className={`${styles.diffBtn} ${options.difficulty === d ? styles.diffBtnActive : ""}`}
                                                     onClick={() => setOptions({ ...options, difficulty: d })}
                                                 >
                                                     {d.charAt(0).toUpperCase() + d.slice(1)}
@@ -507,7 +551,7 @@ export default function GeneratePage() {
                                 <div className={styles.resultActions}>
                                     {answerKeyContent && (
                                         <button
-                                            className={`btn btn-secondary btn-sm`}
+                                            className="btn btn-secondary btn-sm"
                                             onClick={() => setShowAnswers(!showAnswers)}
                                         >
                                             {showAnswers ? "Hide" : "Show"} Answers
