@@ -1,51 +1,113 @@
-/* ---- Page ---- */
+/* ---- Landing Page — Dark Magenta Theme with Live Elements ---- */
+
 .page {
   position: relative;
   overflow: hidden;
 }
 
-/* ---- Floating Orbs ---- */
-.orbContainer {
+/* ---- Animated Accent Line (left side with glow pulse) ---- */
+.accentLine {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  z-index: 50;
+  background: var(--accent-gradient);
+  box-shadow: 0 0 15px rgba(204, 54, 214, 0.4), 0 0 40px rgba(204, 54, 214, 0.15);
+  animation: accentPulse 3s ease-in-out infinite;
+}
+
+@keyframes accentPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(204, 54, 214, 0.3), 0 0 30px rgba(204, 54, 214, 0.1);
+    opacity: 0.7;
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(204, 54, 214, 0.6), 0 0 60px rgba(204, 54, 214, 0.25);
+    opacity: 1;
+  }
+}
+
+/* ---- Particle Canvas ---- */
+.particleCanvas {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  overflow: hidden;
 }
 
-.orb {
+/* ---- Live Dot ---- */
+.liveDot {
+  position: relative;
+  display: inline-flex;
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+.liveDotInner {
   position: absolute;
+  inset: 2px;
+  background: var(--green);
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.4;
-  animation: float 20s ease-in-out infinite;
+  z-index: 1;
 }
 
-.orb1 {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(108, 92, 231, 0.3), transparent 70%);
-  top: -100px;
-  right: -100px;
-  animation-delay: 0s;
+.liveDotPulse {
+  position: absolute;
+  inset: 0;
+  background: var(--green);
+  border-radius: 50%;
+  animation: dotPulse 2s ease-in-out infinite;
 }
 
-.orb2 {
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(0, 206, 201, 0.25), transparent 70%);
-  bottom: 20%;
-  left: -80px;
-  animation-delay: -7s;
+@keyframes dotPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
 }
 
-.orb3 {
-  width: 250px;
-  height: 250px;
-  background: radial-gradient(circle, rgba(162, 155, 254, 0.2), transparent 70%);
-  top: 50%;
-  right: 30%;
-  animation-delay: -14s;
+/* ---- Typing Cursor ---- */
+.typingText {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.cursor {
+  display: inline-block;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: blink 0.8s step-end infinite;
+  font-weight: 300;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 /* ---- Navbar ---- */
@@ -56,8 +118,8 @@
   right: 0;
   z-index: 100;
   padding: var(--space-md) 0;
-  background: rgba(10, 10, 15, 0.7);
-  backdrop-filter: blur(20px);
+  background: rgba(13, 13, 20, 0.85);
+  backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -79,15 +141,32 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: var(--bg-glass);
+  background: rgba(204, 54, 214, 0.1);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(204, 54, 214, 0.2);
 }
 
 .logoText {
   font-size: 1.3rem;
   font-weight: 800;
   letter-spacing: -0.03em;
+}
+
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.liveIndicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 0.78rem;
+  color: var(--green);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 /* ---- Hero ---- */
@@ -99,6 +178,20 @@
   justify-content: center;
   text-align: center;
   padding-top: 80px;
+  position: relative;
+}
+
+/* Subtle grid background */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(204, 54, 214, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(204, 54, 214, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+  pointer-events: none;
 }
 
 .heroBadge {
@@ -109,16 +202,25 @@
 .heroTitle {
   font-size: clamp(2.5rem, 6vw, 4.5rem);
   font-weight: 900;
-  line-height: 1.1;
+  line-height: 1.15;
   letter-spacing: -0.04em;
   margin-bottom: var(--space-xl);
   animation: fadeIn 0.6s ease 0.4s both;
+  min-height: 3.6em;
+}
+
+.heroSubline {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.6em;
+  letter-spacing: 0;
+  -webkit-text-fill-color: unset;
 }
 
 .heroDesc {
   max-width: 600px;
   margin: 0 auto var(--space-2xl);
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   color: var(--text-secondary);
   animation: fadeIn 0.6s ease 0.6s both;
 }
@@ -131,6 +233,90 @@
   animation: fadeIn 0.6s ease 0.8s both;
 }
 
+/* ---- Live Stats Section ---- */
+.stats {
+  padding: var(--space-3xl) 0;
+  position: relative;
+  z-index: 1;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+}
+
+.statCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  text-align: center;
+  transition: all var(--transition-base);
+}
+
+.statCard:hover {
+  border-color: var(--border-active);
+  box-shadow: var(--shadow-glow);
+}
+
+.statNumber {
+  font-size: 2.8rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: var(--space-sm);
+}
+
+.statPlus {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 1.5rem;
+}
+
+.statLabel {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+}
+
+.statBar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.statBarFill {
+  height: 100%;
+  background: var(--accent-gradient);
+  border-radius: var(--radius-full);
+  animation: barGrow 2s ease forwards;
+  box-shadow: 0 0 8px rgba(204, 54, 214, 0.4);
+}
+
+.statBarYellow {
+  background: linear-gradient(90deg, #f0c040, #ffd966);
+  box-shadow: 0 0 8px rgba(240, 192, 64, 0.4);
+}
+
+.statBarGreen {
+  background: linear-gradient(90deg, #36d680, #5debb0);
+  box-shadow: 0 0 8px rgba(54, 214, 128, 0.4);
+}
+
+@keyframes barGrow {
+  from {
+    width: 0%;
+  }
+}
+
 /* ---- Steps ---- */
 .steps {
   padding: var(--space-4xl) 0;
@@ -141,12 +327,15 @@
 .sectionTitle {
   text-align: center;
   margin-bottom: var(--space-md);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .sectionDesc {
   text-align: center;
   margin-bottom: var(--space-3xl);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 
 .stepsGrid {
@@ -161,6 +350,31 @@
   position: relative;
   overflow: hidden;
   animation: fadeIn 0.6s ease both;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+}
+
+.stepCard::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent-gradient);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.stepCard:hover {
+  border-color: var(--border-active);
+  box-shadow: var(--shadow-glow);
+}
+
+.stepCard:hover::after {
+  opacity: 1;
 }
 
 .stepNumber {
@@ -173,7 +387,7 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  opacity: 0.15;
+  opacity: 0.1;
   line-height: 1;
 }
 
@@ -181,20 +395,72 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
-  background: var(--bg-glass);
-  border-radius: var(--radius-lg);
+  width: 56px;
+  height: 56px;
+  background: rgba(204, 54, 214, 0.08);
+  border: 1px solid rgba(204, 54, 214, 0.15);
+  border-radius: var(--radius-md);
   margin-bottom: var(--space-lg);
   color: var(--accent-2);
 }
 
 .stepCard h3 {
   margin-bottom: var(--space-sm);
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 .stepCard p {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  margin-bottom: var(--space-md);
+}
+
+/* Step live status badges */
+.stepStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.status_green {
+  background: rgba(54, 214, 128, 0.08);
+  color: var(--green);
+  border: 1px solid rgba(54, 214, 128, 0.2);
+}
+
+.status_green .liveDotInner,
+.status_green .liveDotPulse {
+  background: var(--green);
+}
+
+.status_yellow {
+  background: rgba(240, 192, 64, 0.08);
+  color: var(--yellow);
+  border: 1px solid rgba(240, 192, 64, 0.2);
+}
+
+.status_yellow .liveDotInner,
+.status_yellow .liveDotPulse {
+  background: var(--yellow);
+}
+
+.status_magenta {
+  background: rgba(204, 54, 214, 0.08);
+  color: var(--accent-2);
+  border: 1px solid rgba(204, 54, 214, 0.2);
+}
+
+.status_magenta .liveDotInner,
+.status_magenta .liveDotPulse {
+  background: var(--accent-2);
 }
 
 /* ---- Features ---- */
@@ -213,20 +479,32 @@
 
 .featureCard {
   padding: var(--space-xl);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+}
+
+.featureCard:hover {
+  border-color: var(--border-active);
+  background: var(--bg-card-hover);
+  box-shadow: var(--shadow-glow);
 }
 
 .featureIcon {
-  font-size: 2rem;
+  font-size: 1.8rem;
   margin-bottom: var(--space-md);
 }
 
 .featureCard h3 {
   margin-bottom: var(--space-sm);
-  font-size: 1.1rem;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 .featureCard p {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  line-height: 1.6;
 }
 
 /* ---- CTA ---- */
@@ -241,14 +519,20 @@
   padding: var(--space-4xl) var(--space-2xl);
   position: relative;
   overflow: hidden;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  animation: glow-pulse 4s ease-in-out infinite;
 }
 
 .ctaCard::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, rgba(108, 92, 231, 0.08) 0%, transparent 70%);
-  pointer-events: none;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent-gradient);
 }
 
 .ctaCard h2 {
@@ -270,7 +554,7 @@
 }
 
 .footer p {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
 }
 
@@ -278,20 +562,27 @@
 @media (max-width: 900px) {
 
   .stepsGrid,
-  .featuresGrid {
+  .featuresGrid,
+  .statsGrid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .liveIndicator {
+    display: none;
   }
 }
 
 @media (max-width: 600px) {
 
   .stepsGrid,
-  .featuresGrid {
+  .featuresGrid,
+  .statsGrid {
     grid-template-columns: 1fr;
   }
 
   .heroTitle {
     font-size: 2.2rem;
+    min-height: auto;
   }
 
   .heroCta {

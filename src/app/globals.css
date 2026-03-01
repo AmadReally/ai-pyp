@@ -1,36 +1,44 @@
 /* ============================================
    AI PYP — Global Styles
-   Premium dark theme with glassmorphism
+   Dark theme with magenta/pink accents
+   Inspired by: Pterodactyl-style dashboard
    ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ---- CSS Variables ---- */
 :root {
-  /* Colors */
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #12121a;
-  --bg-card: rgba(255, 255, 255, 0.03);
-  --bg-card-hover: rgba(255, 255, 255, 0.06);
-  --bg-glass: rgba(255, 255, 255, 0.05);
-  --bg-glass-strong: rgba(255, 255, 255, 0.08);
+  /* Colors — Deep dark with magenta accents */
+  --bg-primary: #0d0d14;
+  --bg-secondary: #131320;
+  --bg-card: #161627;
+  --bg-card-hover: #1c1c34;
+  --bg-glass: rgba(255, 255, 255, 0.02);
+  --bg-glass-strong: rgba(255, 255, 255, 0.04);
+  --bg-input: #0f0f1c;
 
-  --text-primary: #f0f0f5;
-  --text-secondary: #8888a0;
-  --text-muted: #555570;
+  --text-primary: #e2e2ef;
+  --text-secondary: #7a7a95;
+  --text-muted: #44445a;
 
-  --accent-1: #6c5ce7;
-  --accent-2: #a29bfe;
-  --accent-3: #00cec9;
-  --accent-gradient: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #00cec9 100%);
-  --accent-gradient-hover: linear-gradient(135deg, #7c6cf7 0%, #b2abfe 50%, #10ded9 100%);
+  /* Magenta / Pink accent */
+  --accent-1: #cc36d6;
+  --accent-2: #e44af0;
+  --accent-3: #f472ff;
+  --accent-gradient: linear-gradient(135deg, #cc36d6 0%, #e44af0 50%, #f472ff 100%);
+  --accent-gradient-hover: linear-gradient(135deg, #d946e3 0%, #f05afc 50%, #ff82ff 100%);
 
-  --border-color: rgba(255, 255, 255, 0.06);
-  --border-active: rgba(108, 92, 231, 0.4);
+  /* Secondary accents */
+  --yellow: #f0c040;
+  --green: #36d680;
+  --cyan: #36c6d6;
 
-  --success: #00b894;
-  --warning: #fdcb6e;
-  --error: #ff6b6b;
+  --border-color: rgba(255, 255, 255, 0.05);
+  --border-active: rgba(204, 54, 214, 0.4);
+
+  --success: #36d680;
+  --warning: #f0c040;
+  --error: #f04060;
 
   /* Spacing */
   --space-xs: 4px;
@@ -47,17 +55,17 @@
   --font-mono: 'JetBrains Mono', monospace;
 
   /* Border Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
   --radius-full: 9999px;
 
   /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 40px rgba(108, 92, 231, 0.15);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 30px rgba(204, 54, 214, 0.12);
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -89,32 +97,29 @@ body {
   overflow-x: hidden;
 }
 
-/* ---- Animated Background ---- */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(108, 92, 231, 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 50%, rgba(0, 206, 201, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 30% at 20% 80%, rgba(162, 155, 254, 0.06) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
-}
-
 /* ---- Typography ---- */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
 
-h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
-h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); }
-h3 { font-size: clamp(1.25rem, 2vw, 1.5rem); }
+h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+h3 {
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+}
 
 p {
   color: var(--text-secondary);
@@ -153,12 +158,12 @@ a:hover {
 .btn-primary {
   background: var(--accent-gradient);
   color: white;
-  box-shadow: 0 4px 20px rgba(108, 92, 231, 0.3);
+  box-shadow: 0 4px 20px rgba(204, 54, 214, 0.25);
 }
 
 .btn-primary:hover {
   background: var(--accent-gradient-hover);
-  box-shadow: 0 6px 30px rgba(108, 92, 231, 0.4);
+  box-shadow: 0 6px 30px rgba(204, 54, 214, 0.35);
   transform: translateY(-2px);
 }
 
@@ -167,14 +172,13 @@ a:hover {
 }
 
 .btn-secondary {
-  background: var(--bg-glass-strong);
+  background: var(--bg-card);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
-  backdrop-filter: blur(10px);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-card-hover);
   border-color: var(--border-active);
 }
 
@@ -200,7 +204,6 @@ a:hover {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  backdrop-filter: blur(20px);
   transition: all var(--transition-base);
 }
 
@@ -225,8 +228,8 @@ a:hover {
   align-items: center;
   gap: var(--space-xs);
   padding: var(--space-xs) var(--space-md);
-  background: var(--bg-glass);
-  border: 1px solid var(--border-color);
+  background: rgba(204, 54, 214, 0.1);
+  border: 1px solid rgba(204, 54, 214, 0.2);
   border-radius: var(--radius-full);
   font-size: 0.8rem;
   font-weight: 500;
@@ -244,14 +247,16 @@ a:hover {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ---- Progress Bar ---- */
 .progress-bar {
   width: 100%;
   height: 4px;
-  background: var(--bg-glass);
+  background: var(--bg-card);
   border-radius: var(--radius-full);
   overflow: hidden;
 }
@@ -261,18 +266,7 @@ a:hover {
   background: var(--accent-gradient);
   border-radius: var(--radius-full);
   transition: width var(--transition-slow);
-}
-
-/* ---- Floating Gradient Orbs ---- */
-@keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -30px) scale(1.05); }
-  66% { transform: translate(-20px, 20px) scale(0.95); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
+  box-shadow: 0 0 8px rgba(204, 54, 214, 0.5);
 }
 
 /* ---- Scrollbar ---- */
@@ -306,8 +300,15 @@ a:hover {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .slide-up {
@@ -315,8 +316,28 @@ a:hover {
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(40px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Magenta glow keyframes */
+@keyframes glow-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(204, 54, 214, 0.05);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(204, 54, 214, 0.12);
+  }
 }
 
 /* ---- Responsive ---- */

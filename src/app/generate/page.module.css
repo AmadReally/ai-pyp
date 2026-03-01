@@ -1,43 +1,21 @@
-/* ---- Generate Page Styles ---- */
+/* ---- Generate Page — Dark Magenta Theme ---- */
 
 .page {
     min-height: 100vh;
     position: relative;
 }
 
-/* ---- Floating Orbs ---- */
-.orbContainer {
+/* Left accent line */
+.page::before {
+    content: '';
     position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    overflow: hidden;
-}
-
-.orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.3;
-    animation: float 20s ease-in-out infinite;
-}
-
-.orb1 {
-    width: 350px;
-    height: 350px;
-    background: radial-gradient(circle, rgba(108, 92, 231, 0.25), transparent 70%);
-    top: -50px;
-    left: -100px;
-    animation-delay: 0s;
-}
-
-.orb2 {
-    width: 280px;
-    height: 280px;
-    background: radial-gradient(circle, rgba(0, 206, 201, 0.2), transparent 70%);
-    bottom: 10%;
-    right: -80px;
-    animation-delay: -10s;
+    left: 0;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--accent-gradient);
+    z-index: 50;
+    opacity: 0.6;
 }
 
 /* ---- Navbar ---- */
@@ -48,8 +26,8 @@
     right: 0;
     z-index: 100;
     padding: var(--space-md) 0;
-    background: rgba(10, 10, 15, 0.7);
-    backdrop-filter: blur(20px);
+    background: rgba(13, 13, 20, 0.85);
+    backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -72,9 +50,9 @@
     justify-content: center;
     width: 36px;
     height: 36px;
-    background: var(--bg-glass);
+    background: rgba(204, 54, 214, 0.1);
     border-radius: var(--radius-sm);
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(204, 54, 214, 0.2);
 }
 
 .logoText {
@@ -104,10 +82,14 @@
 
 .header h1 {
     margin-bottom: var(--space-sm);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    font-size: clamp(1.6rem, 4vw, 2.5rem);
 }
 
 .header p {
-    font-size: 1.05rem;
+    font-size: 1rem;
 }
 
 /* ---- Upload Grid ---- */
@@ -120,6 +102,14 @@
 
 .uploadCard {
     padding: var(--space-xl);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-base);
+}
+
+.uploadCard:hover {
+    border-color: var(--border-active);
 }
 
 .uploadCardHeader {
@@ -133,26 +123,29 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
-    background: rgba(108, 92, 231, 0.1);
+    width: 44px;
+    height: 44px;
+    background: rgba(204, 54, 214, 0.08);
+    border: 1px solid rgba(204, 54, 214, 0.15);
     border-radius: var(--radius-md);
     color: var(--accent-2);
     flex-shrink: 0;
 }
 
 .uploadIconPyp {
-    background: rgba(0, 206, 201, 0.1);
-    color: var(--accent-3);
+    background: rgba(240, 192, 64, 0.08);
+    border-color: rgba(240, 192, 64, 0.15);
+    color: var(--yellow);
 }
 
 .uploadCardHeader h3 {
-    font-size: 1.05rem;
+    font-size: 1rem;
     margin-bottom: 2px;
+    font-weight: 700;
 }
 
 .uploadCardHeader p {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
 }
 
@@ -163,26 +156,28 @@
     align-items: center;
     justify-content: center;
     padding: var(--space-2xl) var(--space-lg);
-    border: 2px dashed var(--border-color);
-    border-radius: var(--radius-lg);
+    border: 1px dashed rgba(204, 54, 214, 0.2);
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-base);
     text-align: center;
+    background: var(--bg-input);
 }
 
 .dropZone:hover {
     border-color: var(--accent-2);
-    background: rgba(108, 92, 231, 0.03);
+    background: rgba(204, 54, 214, 0.03);
+    box-shadow: 0 0 20px rgba(204, 54, 214, 0.05);
 }
 
 .dropIcon {
     color: var(--text-muted);
     margin-bottom: var(--space-md);
-    opacity: 0.6;
+    opacity: 0.5;
 }
 
 .dropText {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--text-secondary);
 }
 
@@ -192,7 +187,7 @@
 }
 
 .dropHint {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-muted);
     margin-top: var(--space-xs);
 }
@@ -210,7 +205,7 @@
     align-items: center;
     justify-content: space-between;
     padding: var(--space-sm) var(--space-md);
-    background: var(--bg-glass);
+    background: var(--bg-input);
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
 }
@@ -254,7 +249,7 @@
 }
 
 .removeBtn:hover {
-    background: rgba(255, 107, 107, 0.1);
+    background: rgba(240, 64, 96, 0.1);
     color: var(--error);
 }
 
@@ -262,11 +257,18 @@
 .optionsCard {
     padding: var(--space-xl);
     margin-bottom: var(--space-lg);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
 }
 
 .optionsCard h3 {
     margin-bottom: var(--space-lg);
-    font-size: 1rem;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    font-weight: 600;
 }
 
 .optionsGrid {
@@ -280,7 +282,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-sm);
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     cursor: pointer;
     color: var(--text-secondary);
     user-select: none;
@@ -291,8 +293,8 @@
 }
 
 .checkbox {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border: 2px solid var(--border-color);
     border-radius: 4px;
     display: flex;
@@ -305,12 +307,13 @@
 .checkboxLabel input:checked+.checkbox {
     background: var(--accent-1);
     border-color: var(--accent-1);
+    box-shadow: 0 0 8px rgba(204, 54, 214, 0.3);
 }
 
 .checkboxLabel input:checked+.checkbox::after {
     content: "✓";
     color: white;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
 }
 
@@ -321,14 +324,14 @@
 }
 
 .diffLabel {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: var(--text-secondary);
 }
 
 .diffButtons {
     display: flex;
     gap: 2px;
-    background: var(--bg-glass);
+    background: var(--bg-input);
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
     padding: 2px;
@@ -339,10 +342,10 @@
     background: none;
     border: none;
     color: var(--text-muted);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 4px;
     transition: all var(--transition-fast);
     font-family: var(--font-sans);
 }
@@ -354,6 +357,7 @@
 .diffBtnActive {
     background: var(--accent-1);
     color: white;
+    box-shadow: 0 0 8px rgba(204, 54, 214, 0.3);
 }
 
 /* ---- Generate Section ---- */
@@ -384,11 +388,11 @@
     align-items: center;
     gap: var(--space-sm);
     padding: var(--space-md) var(--space-lg);
-    background: rgba(255, 107, 107, 0.08);
-    border: 1px solid rgba(255, 107, 107, 0.2);
+    background: rgba(240, 64, 96, 0.06);
+    border: 1px solid rgba(240, 64, 96, 0.15);
     border-radius: var(--radius-md);
     color: var(--error);
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     width: 100%;
     max-width: 500px;
 }
@@ -415,10 +419,13 @@
 
 .resultHeader h2 {
     margin-bottom: 4px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
 }
 
 .resultHeader p {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
 }
 
 .resultActions {
@@ -429,10 +436,11 @@
 
 /* ---- Paper Container ---- */
 .paperContainer {
-    background: white;
+    background: #ffffff;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     overflow: hidden;
+    border: 1px solid var(--border-color);
 }
 
 .paperContent {
@@ -495,11 +503,28 @@
     color: #1a1a1a;
     line-height: 1.7;
     font-size: 0.95rem;
-    background: #f8faf8;
+    background: #faf5fb;
 }
 
 .answerKeyContent h2 {
-    color: #2d6a2d;
+    color: #8b2d8b;
+}
+
+/* ---- No floating orbs needed for this theme ---- */
+.orbContainer {
+    display: none;
+}
+
+.orb {
+    display: none;
+}
+
+.orb1 {
+    display: none;
+}
+
+.orb2 {
+    display: none;
 }
 
 /* ---- Responsive ---- */
@@ -521,21 +546,5 @@
     .paperContent,
     .answerKeyContent {
         padding: 24px;
-    }
-}
-
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translate(0, 0) scale(1);
-    }
-
-    33% {
-        transform: translate(30px, -30px) scale(1.05);
-    }
-
-    66% {
-        transform: translate(-20px, 20px) scale(0.95);
     }
 }
