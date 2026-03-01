@@ -3,14 +3,20 @@
 import { useState, useCallback, useRef } from "react";
 import styles from "./page.module.css";
 import type {
-    UploadedFile,
     GenerationOptions,
     GenerationStatus,
 } from "@/types";
 
+interface StoredFile {
+    name: string;
+    size: number;
+    type: string;
+    file: File; // Keep the raw File object
+}
+
 export default function GeneratePage() {
-    const [sourceFiles, setSourceFiles] = useState<UploadedFile[]>([]);
-    const [pypFiles, setPypFiles] = useState<UploadedFile[]>([]);
+    const [sourceFiles, setSourceFiles] = useState<StoredFile[]>([]);
+    const [pypFiles, setPypFiles] = useState<StoredFile[]>([]);
     const [options, setOptions] = useState<GenerationOptions>({
         includeAnswerKey: true,
         includeMarkingScheme: true,
@@ -26,21 +32,17 @@ export default function GeneratePage() {
 
     // ---- File Upload Handler ----
     const handleFiles = useCallback(
-        async (
-            files: FileList | null,
-            type: "source" | "pyp"
-        ) => {
+        (files: FileList | null, type: "source" | "pyp") => {
             if (!files) return;
 
-            const processed: UploadedFile[] = [];
+            const processed: StoredFile[] = [];
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                const content = await fileToBase64(file);
                 processed.push({
                     name: file.name,
                     size: file.size,
                     type: file.type,
-                    content,
+                    file, // Store the raw file
                 });
             }
 
@@ -52,15 +54,6 @@ export default function GeneratePage() {
         },
         []
     );
-
-    const fileToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-        });
-    };
 
     const removeFile = (type: "source" | "pyp", index: number) => {
         if (type === "source") {
@@ -94,7 +87,7 @@ export default function GeneratePage() {
         setShowAnswers(false);
 
         const stages: { stage: GenerationStatus["stage"]; msg: string; progress: number }[] = [
-            { stage: "uploading", msg: "Processing uploaded files...", progress: 10 },
+            { stage: "uploading", msg: "Uploading files...", progress: 10 },
             { stage: "analyzing", msg: "Analyzing past year paper format...", progress: 30 },
             { stage: "planning", msg: "Planning question distribution...", progress: 50 },
             { stage: "generating", msg: "Generating exam paper with AI...", progress: 70 },
@@ -102,37 +95,15 @@ export default function GeneratePage() {
         ];
 
         try {
-            // Show initial status
-            setStatus({ stage: "uploading", progress: 5, message: "Starting..." });
+            setStatus({ stage: "uploading", progress: 5, message: "Preparing files..." });
 
-            const response = await fetch("/api/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    sourceFiles,
-                    pypFiles,
-                    options,
-                }),
-            });
+            // Build FormData — sends raw binary, NOT base64 JSON
+            const formData = new FormData();
+            sourceFiles.forEach((f, i) => formData.append(`source_${i}`, f.file));
+            pypFiles.forEach((f, i) => formData.append(`pyp_${i}`, f.file));
+            formData.append("options", JSON.stringify(options));
 
-            if (!response.ok) {
-                let errorMessage = "Generation failed";
-                try {
-                    const err = await response.json();
-                    errorMessage = err.error || errorMessage;
-                } catch {
-                    // Response might not be JSON (e.g. 413 Request Entity Too Large)
-                    const text = await response.text();
-                    if (response.status === 413) {
-                        errorMessage = "Files too large. Try uploading smaller files (under 10MB each).";
-                    } else {
-                        errorMessage = text || `Server error (${response.status})`;
-                    }
-                }
-                throw new Error(errorMessage);
-            }
-
-            // Simulate progress while waiting for the streamed response
+            // Simulate progress while waiting
             let stageIndex = 0;
             const progressInterval = setInterval(() => {
                 if (stageIndex < stages.length) {
@@ -143,10 +114,31 @@ export default function GeneratePage() {
                     });
                     stageIndex++;
                 }
-            }, 3000);
+            }, 4000);
+
+            const response = await fetch("/api/generate", {
+                method: "POST",
+                body: formData, // FormData — no Content-Type header needed
+            });
+
+            clearInterval(progressInterval);
+
+            if (!response.ok) {
+                let errorMessage = "Generation failed";
+                try {
+                    const err = await response.json();
+                    errorMessage = err.error || errorMessage;
+                } catch {
+                    if (response.status === 413) {
+                        errorMessage = "Files too large. Try uploading smaller files (under 4MB each).";
+                    } else {
+                        errorMessage = `Server error (${response.status})`;
+                    }
+                }
+                throw new Error(errorMessage);
+            }
 
             const data = await response.json();
-            clearInterval(progressInterval);
 
             setGeneratedContent(data.paper);
             setAnswerKeyContent(data.answerKey || "");
@@ -235,8 +227,8 @@ export default function GeneratePage() {
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#grad2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <defs>
                                     <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#6c5ce7" />
-                                        <stop offset="100%" stopColor="#00cec9" />
+                                        <stop offset="0%" stopColor="#cc36d6" />
+                                        <stop offset="100%" stopColor="#f472ff" />
                                     </linearGradient>
                                 </defs>
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -305,7 +297,7 @@ export default function GeneratePage() {
                                         <p className={styles.dropText}>
                                             Drag & drop or <span>browse</span>
                                         </p>
-                                        <p className={styles.dropHint}>PDF, DOCX, TXT — up to 20MB each</p>
+                                        <p className={styles.dropHint}>PDF, DOCX, TXT — up to 4MB each</p>
                                     </div>
 
                                     {sourceFiles.length > 0 && (
@@ -374,7 +366,7 @@ export default function GeneratePage() {
                                         <p className={styles.dropText}>
                                             Drag & drop or <span>browse</span>
                                         </p>
-                                        <p className={styles.dropHint}>PDF, DOCX, images — up to 20MB each</p>
+                                        <p className={styles.dropHint}>PDF, DOCX, images — up to 4MB each</p>
                                     </div>
 
                                     {pypFiles.length > 0 && (
