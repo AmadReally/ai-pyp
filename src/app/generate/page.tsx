@@ -14,12 +14,6 @@ interface StoredFile {
     file: File;
 }
 
-interface UploadedFileRef {
-    uri: string;
-    name: string;
-    mimeType: string;
-}
-
 export default function GeneratePage() {
     const [sourceFiles, setSourceFiles] = useState<StoredFile[]>([]);
     const [pypFiles, setPypFiles] = useState<StoredFile[]>([]);
@@ -41,15 +35,26 @@ export default function GeneratePage() {
         (files: FileList | null, type: "source" | "pyp") => {
             if (!files) return;
 
+            const MAX_SIZE = 4 * 1024 * 1024; // 4MB per file
             const processed: StoredFile[] = [];
+            const oversized: string[] = [];
+
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                processed.push({
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    file,
-                });
+                if (file.size > MAX_SIZE) {
+                    oversized.push(`${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`);
+                } else {
+                    processed.push({
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        file,
+                    });
+                }
+            }
+
+            if (oversized.length) {
+                alert(`These files are too large (max 4MB each):\n${oversized.join("\n")}\n\nTip: Use smaller PDFs or split large files.`);
             }
 
             if (type === "source") {
@@ -84,33 +89,19 @@ export default function GeneratePage() {
         e.stopPropagation();
     };
 
-    // ---- Upload a single file to Gemini via our API ----
-    const uploadFileToGemini = async (file: File): Promise<UploadedFileRef> => {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const response = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
+    // ---- Convert file to base64 ----
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = reader.result as string;
+                // Strip the data URI prefix to get only base64 data
+                const base64 = result.split(",")[1];
+                resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
         });
-
-        if (!response.ok) {
-            let msg = "Upload failed";
-            try {
-                const err = await response.json();
-                msg = err.error || msg;
-            } catch {
-                msg = `Upload failed (${response.status})`;
-            }
-            throw new Error(`Failed to upload "${file.name}": ${msg}`);
-        }
-
-        const data = await response.json();
-        return {
-            uri: data.uri,
-            name: data.name,
-            mimeType: data.mimeType,
-        };
     };
 
     // ---- Generate ----
@@ -122,44 +113,28 @@ export default function GeneratePage() {
         setShowAnswers(false);
 
         try {
-            // Step 1: Upload files one at a time
-            const totalFiles = sourceFiles.length + pypFiles.length;
-            let uploaded = 0;
+            setStatus({ stage: "uploading", progress: 5, message: "Processing files..." });
 
-            setStatus({ stage: "uploading", progress: 5, message: "Uploading files to AI..." });
-
-            const sourceRefs: UploadedFileRef[] = [];
+            // Convert files to base64
+            const sourceData = [];
             for (const f of sourceFiles) {
-                setStatus({
-                    stage: "uploading",
-                    progress: Math.round((uploaded / totalFiles) * 30) + 5,
-                    message: `Uploading ${f.name}...`,
-                });
-                const ref = await uploadFileToGemini(f.file);
-                sourceRefs.push(ref);
-                uploaded++;
+                const data = await fileToBase64(f.file);
+                sourceData.push({ mimeType: f.type || "application/pdf", data });
             }
 
-            const pypRefs: UploadedFileRef[] = [];
+            const pypData = [];
             for (const f of pypFiles) {
-                setStatus({
-                    stage: "uploading",
-                    progress: Math.round((uploaded / totalFiles) * 30) + 5,
-                    message: `Uploading ${f.name}...`,
-                });
-                const ref = await uploadFileToGemini(f.file);
-                pypRefs.push(ref);
-                uploaded++;
+                const data = await fileToBase64(f.file);
+                pypData.push({ mimeType: f.type || "application/pdf", data });
             }
 
-            // Step 2: Generate — this is a small JSON request (just URIs + options)
-            setStatus({ stage: "analyzing", progress: 35, message: "Analyzing past year paper format..." });
+            setStatus({ stage: "analyzing", progress: 20, message: "Sending to AI for analysis..." });
 
-            // Simulate progress while AI works
+            // Simulate progress
             const stages: { stage: GenerationStatus["stage"]; msg: string; progress: number }[] = [
-                { stage: "planning", msg: "Planning question distribution...", progress: 50 },
-                { stage: "generating", msg: "Generating exam paper with AI...", progress: 70 },
-                { stage: "formatting", msg: "Formatting final output...", progress: 90 },
+                { stage: "planning", msg: "Planning question distribution...", progress: 45 },
+                { stage: "generating", msg: "Generating exam paper...", progress: 65 },
+                { stage: "formatting", msg: "Formatting final output...", progress: 85 },
             ];
 
             let stageIndex = 0;
@@ -172,32 +147,40 @@ export default function GeneratePage() {
                     });
                     stageIndex++;
                 }
-            }, 5000);
+            }, 6000);
 
             const response = await fetch("/api/generate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    sourceFileRefs: sourceRefs.map((r) => ({ uri: r.uri, mimeType: r.mimeType })),
-                    pypFileRefs: pypRefs.map((r) => ({ uri: r.uri, mimeType: r.mimeType })),
+                    sourceFiles: sourceData,
+                    pypFiles: pypData,
                     options,
                 }),
             });
 
             clearInterval(progressInterval);
 
+            // Handle response — safely parse even non-JSON errors
+            const responseText = await response.text();
+
             if (!response.ok) {
                 let errorMessage = "Generation failed";
                 try {
-                    const err = await response.json();
+                    const err = JSON.parse(responseText);
                     errorMessage = err.error || errorMessage;
                 } catch {
-                    errorMessage = `Server error (${response.status})`;
+                    // Non-JSON response (e.g. "Request Entity Too Large")
+                    if (response.status === 413) {
+                        errorMessage = "Files too large for the server. Try using smaller PDF files (under 2MB each).";
+                    } else {
+                        errorMessage = responseText.substring(0, 200) || `Server error (${response.status})`;
+                    }
                 }
                 throw new Error(errorMessage);
             }
 
-            const data = await response.json();
+            const data = JSON.parse(responseText);
 
             setGeneratedContent(data.paper);
             setAnswerKeyContent(data.answerKey || "");
@@ -220,36 +203,19 @@ export default function GeneratePage() {
             ? generatedContent + '<div style="page-break-before: always;"></div>' + answerKeyContent
             : generatedContent;
 
-        printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Generated Exam Paper</title>
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-          body {
-            font-family: 'Inter', sans-serif;
-            max-width: 210mm;
-            margin: 20mm auto;
-            padding: 0 20px;
-            color: #1a1a1a;
-            line-height: 1.6;
-          }
-          h1 { font-size: 1.5rem; text-align: center; margin-bottom: 8px; }
-          h2 { font-size: 1.2rem; margin: 24px 0 12px; border-bottom: 2px solid #333; padding-bottom: 4px; }
-          h3 { font-size: 1rem; margin: 16px 0 8px; }
-          table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-          th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
-          th { background: #f5f5f5; font-weight: 600; }
-          .question { margin: 16px 0; }
-          .option { margin: 4px 0 4px 20px; }
-          .instructions { background: #f8f8f8; padding: 16px; border-radius: 8px; margin: 16px 0; }
-          @media print { body { margin: 0; } }
-        </style>
-      </head>
-      <body>${content}</body>
-      </html>
-    `);
+        printWindow.document.write(`<!DOCTYPE html><html><head><title>Generated Exam Paper</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+body { font-family: 'Inter', sans-serif; max-width: 210mm; margin: 20mm auto; padding: 0 20px; color: #1a1a1a; line-height: 1.6; }
+h1 { font-size: 1.5rem; text-align: center; margin-bottom: 8px; }
+h2 { font-size: 1.2rem; margin: 24px 0 12px; border-bottom: 2px solid #333; padding-bottom: 4px; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; }
+.option { margin: 4px 0 4px 20px; }
+.instructions { background: #f8f8f8; padding: 16px; border-radius: 8px; margin: 16px 0; }
+@media print { body { margin: 0; } }
+</style></head><body>${content}</body></html>`);
         printWindow.document.close();
         printWindow.print();
     };
@@ -342,7 +308,7 @@ export default function GeneratePage() {
                                         <p className={styles.dropText}>
                                             Drag & drop or <span>browse</span>
                                         </p>
-                                        <p className={styles.dropHint}>PDF, DOCX, TXT</p>
+                                        <p className={styles.dropHint}>PDF, DOCX, TXT — max 4MB each</p>
                                     </div>
 
                                     {sourceFiles.length > 0 && (
@@ -411,7 +377,7 @@ export default function GeneratePage() {
                                         <p className={styles.dropText}>
                                             Drag & drop or <span>browse</span>
                                         </p>
-                                        <p className={styles.dropHint}>PDF, DOCX, images</p>
+                                        <p className={styles.dropHint}>PDF, DOCX, images — max 4MB each</p>
                                     </div>
 
                                     {pypFiles.length > 0 && (

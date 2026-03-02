@@ -3,14 +3,14 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const maxDuration = 60;
 
-interface FileRef {
-    uri: string;
+interface FileData {
     mimeType: string;
+    data: string; // base64
 }
 
 interface GenerateBody {
-    sourceFileRefs: FileRef[];
-    pypFileRefs: FileRef[];
+    sourceFiles: FileData[];
+    pypFiles: FileData[];
     options: {
         includeAnswerKey: boolean;
         includeMarkingScheme: boolean;
@@ -21,9 +21,9 @@ interface GenerateBody {
 export async function POST(request: NextRequest) {
     try {
         const body: GenerateBody = await request.json();
-        const { sourceFileRefs, pypFileRefs, options } = body;
+        const { sourceFiles, pypFiles, options } = body;
 
-        if (!sourceFileRefs.length || !pypFileRefs.length) {
+        if (!sourceFiles.length || !pypFiles.length) {
             return NextResponse.json(
                 { error: "Please upload at least one source file and one past year paper." },
                 { status: 400 }
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
             return NextResponse.json(
-                { error: "Gemini API key not configured. Add GEMINI_API_KEY to your .env.local file." },
+                { error: "Gemini API key not configured. Add GEMINI_API_KEY to environment variables." },
                 { status: 500 }
             );
         }
@@ -41,16 +41,16 @@ export async function POST(request: NextRequest) {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
-        // Build file parts using Gemini file URIs (no inline data!)
-        const sourceParts = sourceFileRefs.map((f) => ({
-            fileData: { fileUri: f.uri, mimeType: f.mimeType },
+        // Build file parts
+        const sourceParts = sourceFiles.map((f) => ({
+            inlineData: { mimeType: f.mimeType, data: f.data },
         }));
 
-        const pypParts = pypFileRefs.map((f) => ({
-            fileData: { fileUri: f.uri, mimeType: f.mimeType },
+        const pypParts = pypFiles.map((f) => ({
+            inlineData: { mimeType: f.mimeType, data: f.data },
         }));
 
-        // ---- Stage 1: Analyze PYP format ----
+        // ---- Analyze PYP format ----
         const analyzePrompt = `You are an expert exam paper analyst. Analyze the following past year paper(s) and extract the EXACT format structure.
 
 Return a JSON object with this structure:
@@ -73,24 +73,21 @@ Return a JSON object with this structure:
   ]
 }
 
-Be precise — capture the exact format, marks, and structure. Return ONLY valid JSON, no markdown.`;
+Be precise. Return ONLY valid JSON, no markdown.`;
 
-        const analyzeResult = await model.generateContent([
-            analyzePrompt,
-            ...pypParts,
-        ]);
+        const analyzeResult = await model.generateContent([analyzePrompt, ...pypParts]);
         const formatJson = analyzeResult.response.text();
 
-        // ---- Stage 2: Generate the actual exam paper ----
+        // ---- Generate exam paper ----
         const difficultyMap: Record<string, string> = {
-            easy: "slightly easier than the reference paper — focus on basic recall and understanding",
-            medium: "similar difficulty to the reference paper — mix of recall, understanding, and application",
-            hard: "slightly harder than the reference paper — focus on application, analysis, and synthesis",
+            easy: "slightly easier than the reference paper",
+            medium: "similar difficulty to the reference paper",
+            hard: "slightly harder than the reference paper",
         };
 
         const answerInstructions = options.includeAnswerKey
             ? `After the exam paper, generate a SEPARATE section titled "ANSWER KEY" with:
-${options.includeMarkingScheme ? "- Full model answers with step-by-step working\n- Mark allocation breakdown for each question" : "- Brief correct answers only (no detailed working)"}`
+${options.includeMarkingScheme ? "- Full model answers with step-by-step working\n- Mark allocation breakdown for each question" : "- Brief correct answers only"}`
             : "";
 
         const generatePrompt = `You are a professional university exam paper generator.
@@ -98,47 +95,31 @@ ${options.includeMarkingScheme ? "- Full model answers with step-by-step working
 ## YOUR TASK
 Generate a BRAND NEW exam paper that EXACTLY follows the format of the reference past year paper.
 
-## FORMAT TEMPLATE (extracted from the past year paper)
+## FORMAT TEMPLATE
 ${formatJson}
 
 ## RULES
-1. The questions MUST be based ENTIRELY on the source material provided — do NOT create questions about topics not covered in the source.
-2. Match the EXACT format: same number of sections, same question types, same marks allocation, same style of wording.
-3. Do NOT copy or rephrase any questions from the past year paper — generate completely NEW questions.
+1. Questions MUST be based ENTIRELY on the source material provided.
+2. Match the EXACT format: same sections, question types, marks allocation, style.
+3. Do NOT copy questions from the past year paper — generate completely NEW ones.
 4. Difficulty level: ${difficultyMap[options.difficulty] || difficultyMap.medium}
-5. Include clear instructions and marks for each question, matching the original format.
-6. For MCQ questions, always provide 4 options (A, B, C, D) with only one correct answer.
+5. Include clear instructions and marks for each question.
+6. For MCQ questions, provide 4 options (A, B, C, D).
 
 ## OUTPUT FORMAT
-Return the exam paper in clean HTML format using these guidelines:
-- Use <h1> for the exam title
-- Use <h2> for section headers
-- Use <h3> for sub-sections if needed
-- Use <p> for questions with a <strong> tag for question numbers and marks
-- Use <div class="option"> for MCQ options
-- Use <table> for any tabular data
-- Use <div class="instructions"> for instruction boxes
-- Keep the HTML clean and simple — it will be rendered in a white paper view
+Return clean HTML:
+- <h1> for exam title, <h2> for sections, <p> for questions
+- <div class="option"> for MCQ options, <table> for tabular data
+- <div class="instructions"> for instruction boxes
+${answerInstructions ? `\n## ANSWER KEY\n${answerInstructions}\nSeparate with: <hr class="answer-separator">` : ""}
 
-${answerInstructions ? `## ANSWER KEY\n${answerInstructions}\nSeparate the answer key from the paper with: <hr class="answer-separator">` : ""}
+Output ONLY HTML, no markdown code fences.`;
 
-Generate the complete exam paper now. Output ONLY the HTML content, no markdown code fences.`;
-
-        const generateResult = await model.generateContent([
-            generatePrompt,
-            ...sourceParts,
-            ...pypParts,
-        ]);
-
+        const generateResult = await model.generateContent([generatePrompt, ...sourceParts, ...pypParts]);
         let fullOutput = generateResult.response.text();
 
-        // Clean up any markdown code fences
-        fullOutput = fullOutput
-            .replace(/^```html?\n?/i, "")
-            .replace(/\n?```$/i, "")
-            .trim();
+        fullOutput = fullOutput.replace(/^```html?\n?/i, "").replace(/\n?```$/i, "").trim();
 
-        // Split paper and answer key
         let paper = fullOutput;
         let answerKey = "";
 
@@ -147,22 +128,17 @@ Generate the complete exam paper now. Output ONLY the HTML content, no markdown 
             paper = fullOutput.substring(0, separatorIndex).trim();
             answerKey = fullOutput.substring(separatorIndex + '<hr class="answer-separator">'.length).trim();
         } else {
-            const answerKeyMatch = fullOutput.match(/<h[12][^>]*>\s*(ANSWER\s*KEY|MARKING\s*SCHEME|MODEL\s*ANSWERS)/i);
-            if (answerKeyMatch && answerKeyMatch.index) {
-                paper = fullOutput.substring(0, answerKeyMatch.index).trim();
-                answerKey = fullOutput.substring(answerKeyMatch.index).trim();
+            const match = fullOutput.match(/<h[12][^>]*>\s*(ANSWER\s*KEY|MARKING\s*SCHEME|MODEL\s*ANSWERS)/i);
+            if (match?.index) {
+                paper = fullOutput.substring(0, match.index).trim();
+                answerKey = fullOutput.substring(match.index).trim();
             }
         }
 
-        return NextResponse.json({
-            paper,
-            answerKey,
-            format: formatJson,
-        });
+        return NextResponse.json({ paper, answerKey, format: formatJson });
     } catch (error: unknown) {
         console.error("Generation error:", error);
-        const message =
-            error instanceof Error ? error.message : "An unexpected error occurred";
+        const message = error instanceof Error ? error.message : "An unexpected error occurred";
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }
